@@ -143,14 +143,18 @@
     <ClCompile Include="Include\Main.cpp" />
     <ClCompile Include="Include\Camera.cpp" />
     <ClCompile Include="Include\Renderer.cpp" />
-    <ClCompile Include="Include\Shader.cpp" />
+    <ClCompile Include="Include\Resources\DepthStencil.cpp" />
+    <ClCompile Include="Include\Resources\ObjLoader.cpp" />
+    <ClCompile Include="Include\Resources\Shader.cpp" />
     <ClCompile Include="Include\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Camera.h" />
     <ClInclude Include="Include\Renderer.h" />
-    <ClInclude Include="Include\Shader.h" />
-    <ClInclude Include="Include\Shapes.h" />
+    <ClInclude Include="Include\Resources\DepthStencil.h" />
+    <ClInclude Include="Include\Resources\ObjLoader.h" />
+    <ClInclude Include="Include\Resources\Shader.h" />
+    <ClInclude Include="Include\Resources\Shapes.h" />
     <ClInclude Include="Include\ThrowIfFailed.h" />
     <ClInclude Include="Include\Window.h" />
   </ItemGroup>

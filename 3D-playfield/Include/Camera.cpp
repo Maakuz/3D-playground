@@ -1,6 +1,6 @@
 #include "Camera.h"
 using namespace DirectX::SimpleMath;
-#define MOVE_SPEED 0.001
+#define MOVE_SPEED 0.0015
 
 Camera::Camera(ID3D11Device* device, int width, int height, float drawDistance, float fieldOfView)
 {
@@ -146,30 +146,33 @@ void Camera::updateKeyboard()
 	{
 		Vector3 dir = Vector3(forward.x, 0, forward.z);
 		dir.Normalize();
-		accelDir += dir * MOVE_SPEED;
+		accelDir += dir;
 	}
 
 	if (ks.S)
 	{
 		Vector3 dir = Vector3(forward.x, 0, forward.z);
 		dir.Normalize();
-		accelDir -= dir * MOVE_SPEED;
+		accelDir -= dir;
 	}
 
 	if (ks.A)
 	{
 		Vector3 dir = Vector3(forward.x, 0, forward.z).Cross({ 0, 1, 0 });
 		dir.Normalize();
-		accelDir -= dir * MOVE_SPEED;
+		accelDir -= dir;
 	}
 
 	if (ks.D)
 	{
 		Vector3 dir = Vector3(forward.x, 0, forward.z).Cross({ 0, 1, 0 });
 		dir.Normalize();
-		accelDir += dir * MOVE_SPEED;
+		accelDir += dir;
 	}
 
+	accelDir.Normalize();
+
+	accelDir *= MOVE_SPEED;
 
 	pos += accelDir;
 	forward += accelDir;

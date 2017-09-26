@@ -1,7 +1,7 @@
 #pragma once
 #include <d3d11.h>
 #include <d3dcompiler.h>
-#include "ThrowIfFailed.h"
+#include "../ThrowIfFailed.h"
 #include <initializer_list>
 
 #pragma comment (lib, "d3d11.lib")

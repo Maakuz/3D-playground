@@ -32,7 +32,7 @@ PS_IN VS(VS_IN input)
     output.pos = mul(input.transform, output.pos);
     output.pos = mul(VP, output.pos);
 
-    output.normal = input.normal;
+    output.normal = normalize(mul(input.transform, float4(input.normal, 0)));
     output.uv = input.uv;
 
 
@@ -40,9 +40,19 @@ PS_IN VS(VS_IN input)
 }
 
 
-
+SamplerState sState : register(s0);
+texture2D diffuseTexture : register(t0);
 
 float4 PS(PS_IN input) : SV_Target0
 {
-    return float4(1, 1, 1, 1);
+    float3 lightDir = normalize(float3(0.3, -1, 0.3));
+    float3 lightColor = float3(0, 0.7, 0.6);
+
+    float3 diffuseComponent = dot(input.normal, -lightDir) * lightColor;
+
+    float3 color = diffuseTexture.Sample(sState, input.uv);
+
+
+    return float4(0, input.uv, 1);
+    return float4(color * diffuseComponent, 1);
 }

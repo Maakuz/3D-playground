@@ -81,7 +81,7 @@ int Window::run()
 	renderer = new Renderer(device, context, backBufferRTV);
 	camera = new Camera(device, WIN_WIDTH, WIN_HEIGHT, 300);
 
-	camera->setPos(DirectX::SimpleMath::Vector3(0, 0, 3));
+	camera->setPos(DirectX::SimpleMath::Vector3(0, 1, 3));
 	camera->setForward(DirectX::SimpleMath::Vector3(0, 0, -1));
 
 
@@ -104,23 +104,23 @@ int Window::run()
 			PostQuitMessage(0);
 		///////
 		static float t = 0;
-		t += 0.001;
+		t += 0.0001;
 		static RenderInfo test =
 		{
-			MODEL_ID::CUBE,
+			MODEL_ID::BARREL,
 			DirectX::SimpleMath::Matrix::CreateRotationZ(t)
 		};
 
-		test.data.transform = DirectX::SimpleMath::Matrix::CreateRotationZ(t);
+		test.data.transform = DirectX::SimpleMath::Matrix::CreateRotationZ(t) * DirectX::SimpleMath::Matrix::CreateTranslation({ 0, 1, 0 });
 
-		static RenderInfo test2 =
+		static RenderInfo floor =
 		{
 			MODEL_ID::CUBE,
-			DirectX::SimpleMath::Matrix::CreateRotationZ(t)
+			DirectX::SimpleMath::Matrix::CreateScale(1000, 0.1, 1000) * DirectX::SimpleMath::Matrix::CreateTranslation({0, -1, 0})
 		};
 
 		renderer->addItem(&test);
-		renderer->addItem(&test2);
+		renderer->addItem(&floor);
 
 
 		camera->update(context);

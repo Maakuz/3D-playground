@@ -1,20 +1,17 @@
 #pragma once
-#include "Shapes.h"
-#include "Shader.h"
+#include "Resources/Shader.h"
+#include "Resources/DepthStencil.h"
+#include "Resources/ObjLoader.h"
 #include <vector>
 #include <unordered_map>
 #include "Camera.h"
 
 #define MODELCOUNT 1
-#define MAX_INSTANCES 3000
 
 #define WIN_WIDTH 1920
 #define WIN_HEIGHT 1080
 
-enum MODEL_ID
-{
-	CUBE = 0
-};
+
 
 struct InstanceData
 {
@@ -50,11 +47,12 @@ private:
 	ID3D11Device * device;
 	ID3D11DeviceContext * context;
 	ID3D11RenderTargetView * backBuffer;
-	ID3D11Buffer * instanceBuffer;
+
+	DepthStencil depthStencil;
 
 	D3D11_VIEWPORT viewport;
 
-	Cube cube;
+	ObjLoader loader;
 	Shader forward;
 
 	void sortQueue();
