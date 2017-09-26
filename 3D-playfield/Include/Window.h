@@ -1,13 +1,8 @@
 #pragma once
 #include <Windows.h>
-#include <d3d11.h>
-#include "ThrowIfFailed.h"
-#include "Keyboard.h"
+#include "Renderer.h"
 
 #pragma comment (lib, "d3d11.lib")
-
-#define WIN_WIDTH 1920
-#define WIN_HEIGHT 1080
 
 class Window
 {
@@ -23,14 +18,17 @@ private:
 	int mHeight;
 	HINSTANCE hInstance;
 
-	ID3D11Device* mDevice;
-	ID3D11DeviceContext* mContext;
+	ID3D11Device* device;
+	ID3D11DeviceContext* context;
 	ID3D11Debug* mDebugDevice;
 	IDXGISwapChain* mSwapChain;
-	ID3D11RenderTargetView* mBackBufferRTV;
+	ID3D11RenderTargetView* backBufferRTV;
 	std::unique_ptr<DirectX::Keyboard> mKeyboard;
-	//std::unique_ptr<DirectX::Mouse> mMouse;
+	std::unique_ptr<DirectX::Mouse> mMouse;
 	bool isFullscreen;
+
+	Renderer* renderer;
+	Camera * camera;
 
 	void initializeWindow();
 	HRESULT createSwapChain();

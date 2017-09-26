@@ -29,7 +29,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	case WM_XBUTTONDOWN:
 	case WM_XBUTTONUP:
 	case WM_MOUSEHOVER:
-		//DirectX::Mouse::ProcessMessage(msg, wparam, lparam);
+		DirectX::Mouse::ProcessMessage(msg, wparam, lparam);
 		break;
 
 	default:
@@ -49,16 +49,19 @@ Window::Window(HINSTANCE hInstance, int width, int height)
 
 	this->isFullscreen = false;
 	this->mKeyboard = std::make_unique<DirectX::Keyboard>();
-	//this->mMouse = std::make_unique<DirectX::Mouse>();
-	//this->mMouse->SetWindow(window);
+	this->mMouse = std::make_unique<DirectX::Mouse>();
+	this->mMouse->SetWindow(window);
 }
 
 Window::~Window()
 {
+	delete renderer;
+	delete camera;
+
 	this->mSwapChain->Release();
-	this->mDevice->Release();
-	this->mContext->Release();
-	this->mBackBufferRTV->Release();
+	this->device->Release();
+	this->context->Release();
+	this->backBufferRTV->Release();
 
 	//Enable this to get additional information about live objects
 	//this->mDebugDevice->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
@@ -75,31 +78,58 @@ int Window::run()
 	long long totalTime = 0;
 
 	this->createSwapChain();
+	renderer = new Renderer(device, context, backBufferRTV);
+	camera = new Camera(device, WIN_WIDTH, WIN_HEIGHT, 300);
+
+	camera->setPos(DirectX::SimpleMath::Vector3(0, 0, 3));
+	camera->setForward(DirectX::SimpleMath::Vector3(0, 0, -1));
+
 
 	while (WM_QUIT != msg.message)
 	{
+		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+
 		currentTime = this->timer();
 		deltaTime = currentTime - prev;
 		prev = currentTime;
 		totalTime += deltaTime;
 
-		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-
-
-
-			DispatchMessage(&msg);
-		}
-
 		auto ks = this->mKeyboard->GetState();
 
 		if (ks.Escape)
 			PostQuitMessage(0);
+		///////
+		static float t = 0;
+		t += 0.001;
+		static RenderInfo test =
+		{
+			MODEL_ID::CUBE,
+			DirectX::SimpleMath::Matrix::CreateRotationZ(t)
+		};
 
-		
+		test.data.transform = DirectX::SimpleMath::Matrix::CreateRotationZ(t);
+
+		static RenderInfo test2 =
+		{
+			MODEL_ID::CUBE,
+			DirectX::SimpleMath::Matrix::CreateRotationZ(t)
+		};
+
+		renderer->addItem(&test);
+		renderer->addItem(&test2);
+
+
+		camera->update(context);
+
+		renderer->clear();
+		renderer->render(camera);
 		mSwapChain->Present(0, 0);
 	}
+
 
 	return 0;
 }
@@ -146,7 +176,7 @@ void Window::initializeWindow()
 	}
 
 	SetWindowPos(GetConsoleWindow(), 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-	SetWindowPos(this->window, 0, 100, 150, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+	SetWindowPos(this->window, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 
 	ShowWindow(this->window, SW_SHOWDEFAULT);
 	UpdateWindow(this->window);
@@ -179,21 +209,21 @@ HRESULT Window::createSwapChain()
 		D3D11_SDK_VERSION,
 		&desc,
 		&mSwapChain,
-		&this->mDevice,
+		&this->device,
 		NULL,
-		&this->mContext));
+		&this->context));
 
 
 	ID3D11Texture2D* backBuffer = nullptr;
 	ThrowIfFailed(mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBuffer));
 
 
-	ThrowIfFailed(mDevice->CreateRenderTargetView(backBuffer, NULL, &mBackBufferRTV));
+	ThrowIfFailed(device->CreateRenderTargetView(backBuffer, NULL, &backBufferRTV));
 
 	backBuffer->Release();
 
 	//Creates a debug device to check for memory leaks etc
-	ThrowIfFailed(this->mDevice->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast <void **>(&mDebugDevice)));
+	ThrowIfFailed(this->device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast <void **>(&mDebugDevice)));
 
 	return true;
 }

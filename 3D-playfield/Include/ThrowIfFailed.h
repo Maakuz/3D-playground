@@ -3,6 +3,8 @@
 #include <Windows.h>
 #include <stdio.h>
 
+#define SAFE_RELEASE(x) if ((x) != nullptr) {(x)->Release();}
+
 // Helper class for COM exceptions
 class com_exception : public std::exception
 {

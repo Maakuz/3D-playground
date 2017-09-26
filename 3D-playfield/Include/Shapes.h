@@ -11,6 +11,7 @@ struct Vertex
 
 struct  Cube
 {
+	int vertexCount = 36;
 	ID3D11Buffer * vertexBuffer;
 	Cube(ID3D11Device * device)
 	{
