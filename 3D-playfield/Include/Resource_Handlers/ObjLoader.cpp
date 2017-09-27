@@ -3,13 +3,16 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#define TEXTURE_PATH(path) L"Resources/Textures/" path
+#define OBJECT_PATH(path) "Resources/Objects/" path
+#define MATERIAL_PATH(path) "Resources/Materials/" path
 
 using namespace DirectX::SimpleMath;
 
 ObjLoader::ObjLoader(ID3D11Device * device)
 {
-	models[CUBE] = loadObject(device, "Include/Resources/objects/cube.obj", true);
-	models[BARREL] = loadObject(device, "Include/Resources/objects/Barrel/Barrel.obj", true);
+	models[CUBE] = loadObject(device, OBJECT_PATH("Cube.obj"), true);
+	models[BARREL] = loadObject(device, OBJECT_PATH("Barrel.obj"), true);
 }
 
 ObjLoader::~ObjLoader()
@@ -37,7 +40,7 @@ ModelInfo ObjLoader::loadObject(ID3D11Device * device, char * path, bool objIsLe
 	std::stringstream sStream;
 	std::string line;
 	std::string testString;
-	std::string material;
+	std::string materialFile;
 
 	std::vector<Vector3> pos;
 	std::vector<Vector3> normal;
@@ -75,7 +78,7 @@ ModelInfo ObjLoader::loadObject(ID3D11Device * device, char * path, bool objIsLe
 
 		else if (testString.substr(0, 6) == "mtllib")
 		{
-			sStream >> material;
+			sStream >> materialFile;
 		}
 	
 		else if (testString.substr(0, 1) == "f")
@@ -110,6 +113,10 @@ ModelInfo ObjLoader::loadObject(ID3D11Device * device, char * path, bool objIsLe
 		}
 	}
 
+	info.vertexCount = vertices.size();
+
+	file.close();
+
 	D3D11_SUBRESOURCE_DATA subData = {};
 	subData.pSysMem = &vertices[0];
 
@@ -129,11 +136,66 @@ ModelInfo ObjLoader::loadObject(ID3D11Device * device, char * path, bool objIsLe
 	device->CreateBuffer(&desc, NULL, &info.instanceBuffer);
 
 
-	//LÄGG IN MATERIALET PÅ NÅGOT SMART SÄTT
+	//MATERIAL
+	file.open(MATERIAL_PATH("" + materialFile));
 
-	DirectX::CreateWICTextureFromFile(device, L"", nullptr, &info.diffuseTexture);
+	if (!file.is_open())
+		throw "File not open";
 
-	info.vertexCount = vertices.size();
+	std::wstring normalMapName(TEXTURE_PATH());
+	std::wstring diffuseMapName(TEXTURE_PATH());
+
+	while (std::getline(file, line))
+	{
+		sStream = std::stringstream(line);
+		sStream >> testString;
+
+		if (testString.substr(0, 2) == "Ns")
+		{
+			sStream >> info.matInfo.specularity.w;
+		}
+
+		if (testString.substr(0, 2) == "Ka")
+		{
+			sStream >> info.matInfo.ambient.x >> info.matInfo.ambient.y >> info.matInfo.ambient.z;
+		}
+
+		if (testString.substr(0, 2) == "Kd")
+		{
+			sStream >> info.matInfo.diffuse.x >> info.matInfo.diffuse.y >> info.matInfo.diffuse.z;
+		}
+
+		if (testString.substr(0, 2) == "Ks")
+		{
+			sStream >> info.matInfo.specularity.x >> info.matInfo.specularity.y >> info.matInfo.specularity.z;
+		}
+
+		if (testString.substr(0, 6) == "map_Kd")
+		{
+			std::string temp = "";
+			sStream >> temp;
+			std::wstring temp2(temp.begin(), temp.end());
+			diffuseMapName += temp2;
+		}
+
+		if (testString.substr(0, 4) == "bump")
+		{
+			std::string temp = "";
+			sStream >> temp;
+			std::wstring temp2(temp.begin(), temp.end());
+			normalMapName += temp2;
+		}
+	}
+
+	file.close();
+
+	ThrowIfFailed(DirectX::CreateWICTextureFromFile(device, diffuseMapName.c_str(), nullptr, &info.diffuseTexture));
+	ThrowIfFailed(DirectX::CreateWICTextureFromFile(device, normalMapName.c_str(), nullptr, &info.normalTexture));
+	
+	
+	
+	
+
 
 	return info;
 }

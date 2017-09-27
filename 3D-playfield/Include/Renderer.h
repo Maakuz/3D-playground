@@ -1,7 +1,8 @@
 #pragma once
-#include "Resources/Shader.h"
-#include "Resources/DepthStencil.h"
-#include "Resources/ObjLoader.h"
+#include "Resource_Handlers\Shader.h"
+#include "Resource_Handlers\DepthStencil.h"
+#include "Resource_Handlers\ObjLoader.h"
+#include "FlashLight.h"
 #include <vector>
 #include <unordered_map>
 #include "Camera.h"
@@ -25,7 +26,7 @@ struct RenderInfo
 };
 
 
-
+#include "CommonStates.h"
 class Renderer
 {
 public:
@@ -33,7 +34,7 @@ public:
 	~Renderer();
 
 	void addItem(RenderInfo * info);
-	void render(Camera * camera);
+	void render(Camera * camera, FlashLight * flashLight);
 	void clear();
 
 
@@ -51,6 +52,7 @@ private:
 	DepthStencil depthStencil;
 
 	D3D11_VIEWPORT viewport;
+	std::unique_ptr<DirectX::CommonStates> states;
 
 	ObjLoader loader;
 	Shader forward;

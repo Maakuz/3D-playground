@@ -18,6 +18,14 @@ struct Vertex
 	DirectX::SimpleMath::Vector2 uv;
 };
 
+struct MaterialInfo
+{
+	DirectX::SimpleMath::Vector3 diffuse = DirectX::SimpleMath::Vector3(0, 0, 0);
+	DirectX::SimpleMath::Vector3 ambient = DirectX::SimpleMath::Vector3(0, 0, 0);
+	//RGBIntensity
+	DirectX::SimpleMath::Vector4 specularity = DirectX::SimpleMath::Vector4(0, 0, 0, 100);
+};
+
 struct ModelInfo
 {
 	ID3D11Buffer * vertexBuffer;
@@ -25,6 +33,7 @@ struct ModelInfo
 	ID3D11ShaderResourceView * diffuseTexture;
 	ID3D11ShaderResourceView * normalTexture;
 	int vertexCount;
+	MaterialInfo matInfo;
 };
 
 class ObjLoader

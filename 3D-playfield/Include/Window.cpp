@@ -80,6 +80,7 @@ int Window::run()
 	this->createSwapChain();
 	renderer = new Renderer(device, context, backBufferRTV);
 	camera = new Camera(device, WIN_WIDTH, WIN_HEIGHT, 300);
+	FlashLight flashLight(device);
 
 	camera->setPos(DirectX::SimpleMath::Vector3(0, 1, 3));
 	camera->setForward(DirectX::SimpleMath::Vector3(0, 0, -1));
@@ -122,11 +123,11 @@ int Window::run()
 		renderer->addItem(&test);
 		renderer->addItem(&floor);
 
-
 		camera->update(context);
+		flashLight.update(context, camera->getPos(), camera->getForward());
 
 		renderer->clear();
-		renderer->render(camera);
+		renderer->render(camera, &flashLight);
 		mSwapChain->Present(0, 0);
 	}
 

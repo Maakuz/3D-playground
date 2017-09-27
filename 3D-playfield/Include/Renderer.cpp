@@ -11,7 +11,7 @@
 
 Renderer::Renderer(ID3D11Device * device, ID3D11DeviceContext * context, ID3D11RenderTargetView * backBuffer) :
 	loader(device),
-	forward(device, L"Include/Shaders/Forward.hlsl", FORWARD_DESC),
+	forward(device, L"Include/Shaders/Forward.hlsl", FORWARD_DESC, true),
 	depthStencil(device, WIN_WIDTH, WIN_HEIGHT)
 {
 	this->device = device;
@@ -22,6 +22,8 @@ Renderer::Renderer(ID3D11Device * device, ID3D11DeviceContext * context, ID3D11R
 	viewport.Height = WIN_HEIGHT;
 	viewport.Width = WIN_WIDTH;
 	viewport.MaxDepth = 1.0;
+
+	states = std::make_unique<DirectX::CommonStates>(device);
 
 }
 
@@ -35,7 +37,7 @@ void Renderer::addItem(RenderInfo * info)
 	renderInfo.push_back(info);
 }
 
-void Renderer::render(Camera * camera)
+void Renderer::render(Camera * camera, FlashLight * flashLight)
 {
 	sortQueue();
 	writeInstanceData();
@@ -52,6 +54,9 @@ void Renderer::render(Camera * camera)
 		context->IASetVertexBuffers(1, 1, &model->instanceBuffer, &instanceStride, &offset);
 
 		context->VSSetShader(forward, nullptr, 0);
+		context->PSSetShader(forward, nullptr, 0);
+		context->GSSetShader(forward, nullptr, 0);
+
 
 		ID3D11Buffer * buffers[] =
 		{
@@ -61,8 +66,18 @@ void Renderer::render(Camera * camera)
 
 		context->IASetInputLayout(forward);
 
+		ID3D11ShaderResourceView * srvs[] =
+		{
+			model->diffuseTexture,
+			model->normalTexture
+		};
+		//FIX FLASHLIGHT
 
-		context->PSSetShader(forward, nullptr, 0);
+		context->PSSetShaderResources(0, 2, srvs);
+
+		auto samplerState = states->PointClamp();
+		context->PSSetSamplers(0, 1, &samplerState);
+
 		context->OMSetRenderTargets(1, &backBuffer, depthStencil);
 		context->RSSetViewports(1, &viewport);
 
