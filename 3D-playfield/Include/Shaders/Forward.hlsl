@@ -103,6 +103,7 @@ void GS(triangle GS_IN input[3] : SV_POSITION, inout TriangleStream<PS_IN> outpu
 SamplerState sState : register(s0);
 texture2D diffuseTexture : register(t0);
 texture2D normalTexture : register(t1);
+texture2D specularTexture : register(t2);
 
 float3 sampleNormal(PS_IN input)
 {
@@ -125,7 +126,10 @@ float4 PS(PS_IN input) : SV_Target0
     float3 lightDir = normalize(float3(0, -0.5, 0.5));
     float3 lightColor = 1;
     
-    float3 diffuseComponent = saturate(dot(finalNormal, -lightDir)) * lightColor;
+    float3 directionalDiffuse = saturate(dot(finalNormal, -lightDir)) * lightColor;
+
+    float3 reflectThingDir = normalize(-lightDir + (camPos.xyz - input.wPos.xyz));
+    float3 directionalSpecularity = pow(saturate(dot(finalNormal, reflectThingDir)), 500) * lightColor;
 
 
     ///FlashLight
@@ -147,13 +151,14 @@ float4 PS(PS_IN input) : SV_Target0
     flashLightDiffuseComponent = saturate(flashLightDiffuseComponent);
 
     float3 diffuseSample = diffuseTexture.Sample(sState, input.uv);
+    float3 specularSample = specularTexture.Sample(sState, input.uv);
 
-    float3 totalDiffuse = saturate(diffuseComponent + flashLightDiffuseComponent) * diffuseSample;
-
+    float3 totalDiffuse = saturate(directionalDiffuse + flashLightDiffuseComponent) * diffuseSample;
+    directionalSpecularity *= specularSample;
 
     
 
-    float3 totalIllumination = totalDiffuse;
+    float3 totalIllumination = totalDiffuse + directionalSpecularity;
 
     //return float4(diffuseComponent, 1);
     return float4(totalIllumination, 1);

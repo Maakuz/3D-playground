@@ -57,6 +57,7 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 	ID3D11Buffer * camBuf = camera->getBuffer();
 	///JAG HAR ÄNDRAT DENNA VARNNBINGNGNG
 	context->VSSetConstantBuffers(0, 1, &camBuf);
+	context->PSSetConstantBuffers(0, 1, &camBuf);
 
 	ID3D11Buffer * psBuf = flashLight->getBuffer();
 
@@ -79,10 +80,11 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 		ID3D11ShaderResourceView * srvs[] =
 		{
 			model->diffuseTexture,
-			model->normalTexture
+			model->normalTexture,
+			model->specularTexture
 		};
 
-		context->PSSetShaderResources(0, 2, srvs);
+		context->PSSetShaderResources(0, 3, srvs);
 
 		context->DrawInstanced(model->vertexCount, (UINT)pair.second.size(), 0, 0);
 	}
