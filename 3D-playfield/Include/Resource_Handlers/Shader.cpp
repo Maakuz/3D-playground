@@ -40,7 +40,7 @@ Shader::Shader(ID3D11Device * device, LPCWSTR path, std::initializer_list<D3D11_
 	
 
 	ThrowIfFailed(device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), NULL, &vertexShader));
-	ThrowIfFailed(device->CreateInputLayout(inputDesc.begin(), inputDesc.size(), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &layout));
+	ThrowIfFailed(device->CreateInputLayout(inputDesc.begin(), (UINT)inputDesc.size(), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &layout));
 	ThrowIfFailed(device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), NULL, &pixelShader));
 
 	if(gs)

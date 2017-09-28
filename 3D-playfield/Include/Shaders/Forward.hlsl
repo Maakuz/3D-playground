@@ -11,7 +11,7 @@ struct VS_IN
 struct GS_IN
 {
     float4 pos : POSITION;
-    //float4 wPos : WORLDPOSITION;
+    float4 wPos : WORLDPOSITION;
     float3 normal : NORMAL;
     float2 uv : UV;
 
@@ -45,12 +45,12 @@ GS_IN VS(VS_IN input)
 {
     GS_IN output = (GS_IN) 0;
 
-    output.pos = float4(input.pos, 1);
+    output.wPos = float4(input.pos, 1);
 
-    //output.pos = mul(input.transform, output.wPos);
-    //output.pos = mul(VP, output.pos);
+    output.wPos = mul(input.transform, output.wPos);
+    output.pos = mul(VP, output.wPos);
 
-    output.normal = input.normal;// normalize(mul(input.transform, float4(input.normal, 0)));
+    output.normal = normalize(mul(input.transform, float4(input.normal, 0)));
     output.uv = input.uv;
 
     output.transform = input.transform;
@@ -63,8 +63,8 @@ GS_IN VS(VS_IN input)
 void GS(triangle GS_IN input[3] : SV_POSITION, inout TriangleStream<PS_IN> output)
 {
      //calculats tangent and bitangent for normal mapping
-    float3 e0 = input[1].pos - input[0].pos;
-    float3 e1 = input[2].pos - input[0].pos;
+    float3 e0 = input[1].wPos - input[0].wPos;
+    float3 e1 = input[2].wPos - input[0].wPos;
     float2 dUV0 = input[1].uv - input[0].uv;
     float2 dUV1 = input[2].uv - input[0].uv;
 
@@ -89,9 +89,9 @@ void GS(triangle GS_IN input[3] : SV_POSITION, inout TriangleStream<PS_IN> outpu
     for (uint i = 0; i < 3; i++)
     {
         PS_IN element;
-        element.wPos = mul(input[i].transform, input[i].pos);
-        element.pos = mul(VP, element.wPos);
-        element.normal = mul(input[i].transform, input[i].normal);
+        element.wPos = input[i].wPos;
+        element.pos = input[i].pos;
+        element.normal = input[i].normal;
         element.uv = input[i].uv;
         element.tangent = t;
         element.biTangent = bt;
@@ -143,16 +143,18 @@ float4 PS(PS_IN input) : SV_Target0
     //float attenuation = saturate(1.f / (0.01 * max(20, pow(length(flashLightToPos.xyz), 2))));
     float attenuation = smoothstep(40, 0, length(flashLightToPos));
 
-    float3 lightDiffuseComponent = dot(finalNormal, normalize(-flashLightToPos)) * attenuation * falloff;
-    lightDiffuseComponent = saturate(lightDiffuseComponent);
+    float3 flashLightDiffuseComponent = dot(finalNormal, normalize(-flashLightToPos)) * attenuation * falloff;
+    flashLightDiffuseComponent = saturate(flashLightDiffuseComponent);
+
+    float3 diffuseSample = diffuseTexture.Sample(sState, input.uv);
+
+    float3 totalDiffuse = saturate(diffuseComponent + flashLightDiffuseComponent) * diffuseSample;
 
 
+    
 
+    float3 totalIllumination = totalDiffuse;
 
-    float3 color = diffuseTexture.Sample(sState, input.uv);
-
-    float3 totalIllumination = diffuseComponent + lightDiffuseComponent;
-
-    return float4(diffuseComponent, 1);
-    return float4(totalIllumination * color, 1);
+    //return float4(diffuseComponent, 1);
+    return float4(totalIllumination, 1);
 }

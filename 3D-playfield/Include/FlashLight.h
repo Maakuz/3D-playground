@@ -5,9 +5,10 @@ class FlashLight
 {
 	struct LightStruct
 	{
-		DirectX::SimpleMath::Vector3 pos;
-		DirectX::SimpleMath::Vector3 dir;
-		bool lightOn;
+		DirectX::SimpleMath::Vector4 pos;
+		DirectX::SimpleMath::Vector4 dir;
+		int lightOn;
+		DirectX::SimpleMath::Vector3 pad;
 	};
 
 

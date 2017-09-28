@@ -1,6 +1,6 @@
 #include "Camera.h"
 using namespace DirectX::SimpleMath;
-#define MOVE_SPEED 0.0015
+#define MOVE_SPEED 0.015f
 
 Camera::Camera(ID3D11Device* device, int width, int height, float drawDistance, float fieldOfView)
 {
@@ -58,7 +58,7 @@ DirectX::SimpleMath::Vector3 Camera::getPos() const
 
 DirectX::SimpleMath::Vector3 Camera::getForward() const
 {
-	return this->view.Forward();
+	return this->forward;
 }
 
 DirectX::SimpleMath::Vector3 Camera::getUp() const
@@ -114,8 +114,8 @@ void Camera::updateMouse()
 	DirectX::Mouse::Get().SetMode(DirectX::Mouse::MODE_RELATIVE);
 	DirectX::Mouse::State ms = DirectX::Mouse::Get().GetState();
 
-	yaw += 0.1 * (ms.x);
-	pitch -= 0.1 * (ms.y);
+	yaw += 0.1f * (ms.x);
+	pitch -= 0.1f * (ms.y);
 
 	// Pitch lock and yaw correction
 	if (pitch > 89)
@@ -126,8 +126,6 @@ void Camera::updateMouse()
 		yaw = 360.f;
 	if (yaw > 360.f)
 		yaw = 0;
-
-	printf("%f %f\n", yaw, pitch);
 
 	// Create forward
 	forward.x = cos(DirectX::XMConvertToRadians(pitch)) * cos(DirectX::XMConvertToRadians(yaw));

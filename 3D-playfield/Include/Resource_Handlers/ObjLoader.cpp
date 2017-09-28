@@ -11,7 +11,7 @@ using namespace DirectX::SimpleMath;
 
 ObjLoader::ObjLoader(ID3D11Device * device)
 {
-	models[CUBE] = loadObject(device, OBJECT_PATH("Cube.obj"), true);
+	models[CUBE] = loadObject(device, OBJECT_PATH("betterCube.obj"), true);
 	models[BARREL] = loadObject(device, OBJECT_PATH("Barrel.obj"), true);
 }
 
@@ -21,11 +21,13 @@ ObjLoader::~ObjLoader()
 	SAFE_RELEASE(models[CUBE].instanceBuffer);
 	SAFE_RELEASE(models[CUBE].diffuseTexture);
 	SAFE_RELEASE(models[CUBE].normalTexture);
+	SAFE_RELEASE(models[CUBE].specularTexture);
 
 	SAFE_RELEASE(models[BARREL].vertexBuffer);
 	SAFE_RELEASE(models[BARREL].instanceBuffer);
 	SAFE_RELEASE(models[BARREL].diffuseTexture);
 	SAFE_RELEASE(models[BARREL].normalTexture);
+	SAFE_RELEASE(models[BARREL].specularTexture);
 
 }
 
@@ -113,7 +115,7 @@ ModelInfo ObjLoader::loadObject(ID3D11Device * device, char * path, bool objIsLe
 		}
 	}
 
-	info.vertexCount = vertices.size();
+	info.vertexCount = (int)vertices.size();
 
 	file.close();
 
@@ -121,7 +123,7 @@ ModelInfo ObjLoader::loadObject(ID3D11Device * device, char * path, bool objIsLe
 	subData.pSysMem = &vertices[0];
 
 	D3D11_BUFFER_DESC desc = { 0 };
-	desc.ByteWidth = sizeof(Vertex) * vertices.size();
+	desc.ByteWidth = sizeof(Vertex) * (UINT)vertices.size();
 	desc.Usage = D3D11_USAGE_IMMUTABLE;
 	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
@@ -142,8 +144,9 @@ ModelInfo ObjLoader::loadObject(ID3D11Device * device, char * path, bool objIsLe
 	if (!file.is_open())
 		throw "File not open";
 
-	std::wstring normalMapName(TEXTURE_PATH());
-	std::wstring diffuseMapName(TEXTURE_PATH());
+	std::wstring normalMapName(TEXTURE_PATH(""));
+	std::wstring diffuseMapName(TEXTURE_PATH(""));
+	std::wstring specularMapName(TEXTURE_PATH(""));
 
 	while (std::getline(file, line))
 	{
@@ -178,7 +181,15 @@ ModelInfo ObjLoader::loadObject(ID3D11Device * device, char * path, bool objIsLe
 			diffuseMapName += temp2;
 		}
 
-		if (testString.substr(0, 4) == "bump")
+		if (testString.substr(0, 6) == "map_Ns")
+		{
+			std::string temp = "";
+			sStream >> temp;
+			std::wstring temp2(temp.begin(), temp.end());
+			specularMapName += temp2;
+		}
+
+		if (testString.substr(0, 8) == "map_Bump")
 		{
 			std::string temp = "";
 			sStream >> temp;
@@ -191,6 +202,7 @@ ModelInfo ObjLoader::loadObject(ID3D11Device * device, char * path, bool objIsLe
 
 	ThrowIfFailed(DirectX::CreateWICTextureFromFile(device, diffuseMapName.c_str(), nullptr, &info.diffuseTexture));
 	ThrowIfFailed(DirectX::CreateWICTextureFromFile(device, normalMapName.c_str(), nullptr, &info.normalTexture));
+	ThrowIfFailed(DirectX::CreateWICTextureFromFile(device, specularMapName.c_str(), nullptr, &info.specularTexture));
 	
 	
 	

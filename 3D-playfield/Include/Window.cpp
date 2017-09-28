@@ -105,7 +105,7 @@ int Window::run()
 			PostQuitMessage(0);
 		///////
 		static float t = 0;
-		t += 0.0001;
+		t += 0.001f;
 		static RenderInfo test =
 		{
 			MODEL_ID::BARREL,
@@ -114,13 +114,22 @@ int Window::run()
 
 		test.data.transform = DirectX::SimpleMath::Matrix::CreateRotationZ(t) * DirectX::SimpleMath::Matrix::CreateTranslation({ 0, 1, 0 });
 
+		static RenderInfo test2 =
+		{
+			MODEL_ID::CUBE,
+			DirectX::SimpleMath::Matrix::CreateRotationZ(t)
+		};
+
+		test2.data.transform = DirectX::SimpleMath::Matrix::CreateRotationZ(t) * DirectX::SimpleMath::Matrix::CreateTranslation({ 0, 1, 5 });
+
 		static RenderInfo floor =
 		{
 			MODEL_ID::CUBE,
-			DirectX::SimpleMath::Matrix::CreateScale(1000, 0.1, 1000) * DirectX::SimpleMath::Matrix::CreateTranslation({0, -1, 0})
+			DirectX::SimpleMath::Matrix::CreateScale(1000, 0.1f, 1000) * DirectX::SimpleMath::Matrix::CreateTranslation({0, -1, 0})
 		};
 
 		renderer->addItem(&test);
+		renderer->addItem(&test2);
 		renderer->addItem(&floor);
 
 		camera->update(context);
@@ -128,7 +137,11 @@ int Window::run()
 
 		renderer->clear();
 		renderer->render(camera, &flashLight);
+		//if uncapped everything dies
+		Sleep(1);
 		mSwapChain->Present(0, 0);
+
+		printf("%d\n", (int)deltaTime);
 	}
 
 

@@ -32,6 +32,7 @@ struct ModelInfo
 	ID3D11Buffer * instanceBuffer;
 	ID3D11ShaderResourceView * diffuseTexture;
 	ID3D11ShaderResourceView * normalTexture;
+	ID3D11ShaderResourceView * specularTexture;
 	int vertexCount;
 	MaterialInfo matInfo;
 };

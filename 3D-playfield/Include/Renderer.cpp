@@ -44,6 +44,27 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	
+	context->VSSetShader(forward, nullptr, 0);
+	context->PSSetShader(forward, nullptr, 0);
+	context->GSSetShader(forward, nullptr, 0);
+
+	auto samplerState = states->PointClamp();
+	context->PSSetSamplers(0, 1, &samplerState);
+
+	context->OMSetRenderTargets(1, &backBuffer, depthStencil);
+	context->RSSetViewports(1, &viewport);
+
+	ID3D11Buffer * camBuf = camera->getBuffer();
+	///JAG HAR ÄNDRAT DENNA VARNNBINGNGNG
+	context->VSSetConstantBuffers(0, 1, &camBuf);
+
+	ID3D11Buffer * psBuf = flashLight->getBuffer();
+
+	context->PSSetConstantBuffers(1, 1, &psBuf);
+
+	context->IASetInputLayout(forward);
+
+
 	UINT intanceOffset = 0;
 	for (InstanceQueue_t::value_type & pair : instanceQueue)
 	{
@@ -53,33 +74,15 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 		context->IASetVertexBuffers(0, 1, &model->vertexBuffer, &stride, &offset);
 		context->IASetVertexBuffers(1, 1, &model->instanceBuffer, &instanceStride, &offset);
 
-		context->VSSetShader(forward, nullptr, 0);
-		context->PSSetShader(forward, nullptr, 0);
-		context->GSSetShader(forward, nullptr, 0);
-
-
-		ID3D11Buffer * buffers[] =
-		{
-			camera->getBuffer()
-		};
-		context->VSSetConstantBuffers(0, 1, buffers);
-
-		context->IASetInputLayout(forward);
+		
 
 		ID3D11ShaderResourceView * srvs[] =
 		{
 			model->diffuseTexture,
 			model->normalTexture
 		};
-		//FIX FLASHLIGHT
 
 		context->PSSetShaderResources(0, 2, srvs);
-
-		auto samplerState = states->PointClamp();
-		context->PSSetSamplers(0, 1, &samplerState);
-
-		context->OMSetRenderTargets(1, &backBuffer, depthStencil);
-		context->RSSetViewports(1, &viewport);
 
 		context->DrawInstanced(model->vertexCount, (UINT)pair.second.size(), 0, 0);
 	}
@@ -90,7 +93,7 @@ void Renderer::clear()
 	static float clearColor[] = {0, 0, 0, 0};
 
 	context->ClearRenderTargetView(backBuffer, clearColor);
-	context->ClearDepthStencilView(depthStencil, D3D11_CLEAR_DEPTH, 1.f, 0.f);
+	context->ClearDepthStencilView(depthStencil, D3D11_CLEAR_DEPTH, 1.f, 0);
 
 }
 
