@@ -1,7 +1,10 @@
 #pragma once
 #include "Resource_Handlers\Shader.h"
-#include "Resource_Handlers\DepthStencil.h"
+#include "Resource_Handlers\ComputeShader.h"
+#include "Resource_Handlers\Silly_Types\DepthStencil.h"
 #include "Resource_Handlers\ObjLoader.h"
+#include "Resource_Handlers\Silly_Types\RenderTargetResource.h"
+#include "Resource_Handlers\Silly_Types\UnorderedAccessResource.h"
 #include "FlashLight.h"
 #include <vector>
 #include <unordered_map>
@@ -11,6 +14,8 @@
 
 #define WIN_WIDTH 1920
 #define WIN_HEIGHT 1080
+
+#define SHADER_PATH(path) L"Include/Shaders/" path
 
 
 
@@ -35,6 +40,7 @@ public:
 
 	void addItem(RenderInfo * info);
 	void render(Camera * camera, FlashLight * flashLight);
+	void renderDirectlyToBackBuffer(Camera * camera, FlashLight * flashLight);
 	void clear();
 
 
@@ -48,6 +54,8 @@ private:
 	ID3D11Device * device;
 	ID3D11DeviceContext * context;
 	ID3D11RenderTargetView * backBuffer;
+	RenderTargetResource middleBuffer;
+	UnorderedAccessResource gaussianPass;
 
 	DepthStencil depthStencil;
 
@@ -56,6 +64,7 @@ private:
 
 	ObjLoader loader;
 	Shader forward;
+	ComputeShader bloomPicker;
 
 	void sortQueue();
 	void writeInstanceData();

@@ -144,19 +144,27 @@
     <ClCompile Include="Include\Main.cpp" />
     <ClCompile Include="Include\Camera.cpp" />
     <ClCompile Include="Include\Renderer.cpp" />
+    <ClCompile Include="Include\Resource_Handlers\ComputeShader.cpp" />
+    <ClCompile Include="Include\Resource_Handlers\Object.cpp" />
+    <ClCompile Include="Include\Resource_Handlers\Silly_Types\RenderTargetResource.cpp" />
     <ClCompile Include="Include\Resource_Handlers\Shader.cpp" />
-    <ClCompile Include="Include\Resource_Handlers\DepthStencil.cpp" />
+    <ClCompile Include="Include\Resource_Handlers\Silly_Types\DepthStencil.cpp" />
     <ClCompile Include="Include\Resource_Handlers\ObjLoader.cpp" />
+    <ClCompile Include="Include\Resource_Handlers\Silly_Types\UnorderedAccessResource.cpp" />
     <ClCompile Include="Include\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Camera.h" />
     <ClInclude Include="Include\FlashLight.h" />
-    <ClInclude Include="Include\Resource_Handlers\DepthStencil.h" />
+    <ClInclude Include="Include\Resource_Handlers\ComputeShader.h" />
+    <ClInclude Include="Include\Resource_Handlers\Silly_Types\DepthStencil.h" />
+    <ClInclude Include="Include\Resource_Handlers\Object.h" />
     <ClInclude Include="Include\Resource_Handlers\ObjLoader.h" />
     <ClInclude Include="Include\Renderer.h" />
+    <ClInclude Include="Include\Resource_Handlers\Silly_Types\RenderTargetResource.h" />
     <ClInclude Include="Include\Resource_Handlers\Shader.h" />
     <ClInclude Include="Include\Resource_Handlers\Shapes.h" />
+    <ClInclude Include="Include\Resource_Handlers\Silly_Types\UnorderedAccessResource.h" />
     <ClInclude Include="Include\ThrowIfFailed.h" />
     <ClInclude Include="Include\Window.h" />
   </ItemGroup>

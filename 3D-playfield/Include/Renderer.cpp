@@ -11,8 +11,11 @@
 
 Renderer::Renderer(ID3D11Device * device, ID3D11DeviceContext * context, ID3D11RenderTargetView * backBuffer) :
 	loader(device),
-	forward(device, L"Include/Shaders/Forward.hlsl", FORWARD_DESC, true),
-	depthStencil(device, WIN_WIDTH, WIN_HEIGHT)
+	forward(device, SHADER_PATH("Forward.hlsl"), FORWARD_DESC, true),
+	depthStencil(device, WIN_WIDTH, WIN_HEIGHT),
+	middleBuffer(device, WIN_WIDTH, WIN_HEIGHT),
+	gaussianPass(device, WIN_WIDTH, WIN_HEIGHT),
+	bloomPicker(device, SHADER_PATH("bloomThreshold.hlsl"))
 {
 	this->device = device;
 	this->context = context;
@@ -51,11 +54,10 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 	auto samplerState = states->PointClamp();
 	context->PSSetSamplers(0, 1, &samplerState);
 
-	context->OMSetRenderTargets(1, &backBuffer, depthStencil);
 	context->RSSetViewports(1, &viewport);
 
 	ID3D11Buffer * camBuf = camera->getBuffer();
-	///JAG HAR ÄNDRAT DENNA VARNNBINGNGNG
+
 	context->VSSetConstantBuffers(0, 1, &camBuf);
 	context->PSSetConstantBuffers(0, 1, &camBuf);
 
@@ -65,6 +67,9 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 
 	context->IASetInputLayout(forward);
 
+	ID3D11RenderTargetView * rtv = middleBuffer;
+
+	context->OMSetRenderTargets(1, &rtv, depthStencil);
 
 	UINT intanceOffset = 0;
 	for (InstanceQueue_t::value_type & pair : instanceQueue)
@@ -88,6 +93,79 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 
 		context->DrawInstanced(model->vertexCount, (UINT)pair.second.size(), 0, 0);
 	}
+
+	rtv = nullptr;
+	context->OMSetRenderTargets(1, &rtv, depthStencil);
+
+
+	//////POSTEFFECTS///////
+	ID3D11ShaderResourceView * srv = middleBuffer;
+	context->CSSetShaderResources(0, 1, &srv);
+	ID3D11UnorderedAccessView * uav = gaussianPass;
+	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
+	context->CSSetShader(bloomPicker, nullptr, 0);
+	context->Dispatch(120, 135, 1);
+
+
+	srv = nullptr;
+	context->CSSetShaderResources(0, 1, &srv);
+	uav = nullptr;
+	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
+}
+
+
+///DDONT DO ANY POST EFFECXTS HERE BY MISTAKE I WILL KILL AAAHFG
+void Renderer::renderDirectlyToBackBuffer(Camera * camera, FlashLight * flashLight)
+{
+	sortQueue();
+	writeInstanceData();
+
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	context->VSSetShader(forward, nullptr, 0);
+	context->PSSetShader(forward, nullptr, 0);
+	context->GSSetShader(forward, nullptr, 0);
+
+	auto samplerState = states->PointClamp();
+	context->PSSetSamplers(0, 1, &samplerState);
+
+	context->RSSetViewports(1, &viewport);
+
+	ID3D11Buffer * camBuf = camera->getBuffer();
+
+	context->VSSetConstantBuffers(0, 1, &camBuf);
+	context->PSSetConstantBuffers(0, 1, &camBuf);
+
+	ID3D11Buffer * psBuf = flashLight->getBuffer();
+
+	context->PSSetConstantBuffers(1, 1, &psBuf);
+
+	context->IASetInputLayout(forward);
+
+	context->OMSetRenderTargets(1, &backBuffer, depthStencil);
+
+	UINT intanceOffset = 0;
+	for (InstanceQueue_t::value_type & pair : instanceQueue)
+	{
+		ModelInfo * model = loader.getModelInfo(pair.first);
+
+		static UINT stride = sizeof(Vertex), instanceStride = sizeof(InstanceData), offset = 0;
+		context->IASetVertexBuffers(0, 1, &model->vertexBuffer, &stride, &offset);
+		context->IASetVertexBuffers(1, 1, &model->instanceBuffer, &instanceStride, &offset);
+
+
+
+		ID3D11ShaderResourceView * srvs[] =
+		{
+			model->diffuseTexture,
+			model->normalTexture,
+			model->specularTexture
+		};
+
+		context->PSSetShaderResources(0, 3, srvs);
+
+		context->DrawInstanced(model->vertexCount, (UINT)pair.second.size(), 0, 0);
+	}
 }
 
 void Renderer::clear()
@@ -95,6 +173,7 @@ void Renderer::clear()
 	static float clearColor[] = {0, 0, 0, 0};
 
 	context->ClearRenderTargetView(backBuffer, clearColor);
+	context->ClearRenderTargetView(middleBuffer, clearColor);
 	context->ClearDepthStencilView(depthStencil, D3D11_CLEAR_DEPTH, 1.f, 0);
 
 }

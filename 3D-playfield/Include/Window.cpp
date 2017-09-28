@@ -1,4 +1,6 @@
 #include "Window.h"
+#include "Resource_Handlers\Object.h"
+using namespace DirectX::SimpleMath;
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -82,9 +84,26 @@ int Window::run()
 	camera = new Camera(device, WIN_WIDTH, WIN_HEIGHT, 300);
 	FlashLight flashLight(device);
 
-	camera->setPos(DirectX::SimpleMath::Vector3(0, 1, 3));
-	camera->setForward(DirectX::SimpleMath::Vector3(0, 0, -1));
+	camera->setPos(Vector3(0, 1, 3));
+	camera->setForward(Vector3(0, 0, -1));
 
+	std::vector<Object> objects;
+
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 5; j++)
+		{
+			objects.push_back(Object(CUBE, Matrix::CreateTranslation(Vector3(i * 2.f, j * 2.f, 8.f))));
+		}
+	}
+
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 5; j++)
+		{
+			objects.push_back(Object(CUBE, Matrix::CreateTranslation(Vector3(i * 2.f, 10.f, 8.f + j * -2.f))));
+		}
+	}
 
 	while (WM_QUIT != msg.message)
 	{
@@ -106,37 +125,42 @@ int Window::run()
 		///////
 		static float t = 0;
 		t += 0.001f;
-		static RenderInfo test =
+
+		static Object obj(BARREL);
+		obj.setMatrix(Matrix::CreateRotationZ(t) * Matrix::CreateTranslation({ 0, 1, 0 }));
+
+		static Object obj2(CUBE);
+		obj2.setMatrix(Matrix::CreateRotationZ(t) * Matrix::CreateTranslation({ 0, 1, 5 }));
+
+		static Object floor(CUBE, Matrix::CreateScale(1000, 0.1f, 1000) * Matrix::CreateTranslation({ 0, -1, 0 }));
+
+		renderer->addItem(obj);
+		renderer->addItem(obj2);
+		renderer->addItem(floor);
+
+		for (size_t i = 0; i < objects.size(); i++)
 		{
-			MODEL_ID::BARREL,
-			DirectX::SimpleMath::Matrix::CreateRotationZ(t)
-		};
-
-		test.data.transform = DirectX::SimpleMath::Matrix::CreateRotationZ(t) * DirectX::SimpleMath::Matrix::CreateTranslation({ 0, 1, 0 });
-
-		static RenderInfo test2 =
-		{
-			MODEL_ID::CUBE,
-			DirectX::SimpleMath::Matrix::CreateRotationZ(t)
-		};
-
-		test2.data.transform = DirectX::SimpleMath::Matrix::CreateRotationZ(t) * DirectX::SimpleMath::Matrix::CreateTranslation({ 0, 1, 5 });
-
-		static RenderInfo floor =
-		{
-			MODEL_ID::CUBE,
-			DirectX::SimpleMath::Matrix::CreateScale(1000, 0.1f, 1000) * DirectX::SimpleMath::Matrix::CreateTranslation({0, -1, 0})
-		};
-
-		renderer->addItem(&test);
-		renderer->addItem(&test2);
-		renderer->addItem(&floor);
+			renderer->addItem(objects[i]);
+		}
+		
 
 		camera->update(context);
 		flashLight.update(context, camera->getPos(), camera->getForward());
 
 		renderer->clear();
 		renderer->render(camera, &flashLight);
+
+		renderer->addItem(obj);
+		renderer->addItem(obj2);
+		renderer->addItem(floor);
+
+		for (size_t i = 0; i < objects.size(); i++)
+		{
+			renderer->addItem(objects[i]);
+		}
+		renderer->clear();
+		renderer->renderDirectlyToBackBuffer(camera, &flashLight);
+
 		//if uncapped everything dies
 		Sleep(1);
 		mSwapChain->Present(0, 0);

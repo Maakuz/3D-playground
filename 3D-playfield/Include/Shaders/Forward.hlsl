@@ -128,9 +128,10 @@ float4 PS(PS_IN input) : SV_Target0
     
     float3 directionalDiffuse = saturate(dot(finalNormal, -lightDir)) * lightColor;
 
-    float3 reflectThingDir = normalize(-lightDir + (camPos.xyz - input.wPos.xyz));
+    float3 reflectThingDir = normalize((camPos.xyz - input.wPos.xyz) - lightDir);
     float3 directionalSpecularity = pow(saturate(dot(finalNormal, reflectThingDir)), 500) * lightColor;
 
+    directionalSpecularity = dot(finalNormal, -lightDir) <= 0 ? 0 : directionalSpecularity;
 
     ///FlashLight
     float outerCone = 0.8f;
@@ -150,15 +151,21 @@ float4 PS(PS_IN input) : SV_Target0
     float3 flashLightDiffuseComponent = dot(finalNormal, normalize(-flashLightToPos)) * attenuation * falloff;
     flashLightDiffuseComponent = saturate(flashLightDiffuseComponent);
 
+    float3 posToCam = camPos.xyz - input.wPos.xyz;
+    reflectThingDir = normalize(posToCam - flashLightDir.xyz);
+    float3 flashLightSpecularity = pow(saturate(dot(finalNormal, reflectThingDir)), 500) * attenuation * falloff;
+
     float3 diffuseSample = diffuseTexture.Sample(sState, input.uv);
     float3 specularSample = specularTexture.Sample(sState, input.uv);
 
+
+
+
     float3 totalDiffuse = saturate(directionalDiffuse + flashLightDiffuseComponent) * diffuseSample;
-    directionalSpecularity *= specularSample;
 
-    
+    float3 totalSpecularity = (flashLightSpecularity + directionalSpecularity) * specularSample;
 
-    float3 totalIllumination = totalDiffuse + directionalSpecularity;
+    float3 totalIllumination = totalDiffuse + totalSpecularity;
 
     //return float4(diffuseComponent, 1);
     return float4(totalIllumination, 1);

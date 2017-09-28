@@ -89,6 +89,7 @@ ID3D11Buffer* Camera::getBuffer()
 
 void Camera::update(ID3D11DeviceContext* context)
 {
+	updateKeyboard();
 	updateMouse();
 
 	view = DirectX::XMMatrixLookToRH(pos, forward, Vector3(0, 1, 0));
@@ -97,7 +98,7 @@ void Camera::update(ID3D11DeviceContext* context)
 	values.camPos = Vector4(pos);
 
 	this->right = view.Right();
-	updateKeyboard();
+
 
 	D3D11_MAPPED_SUBRESOURCE data;
 	ZeroMemory(&data, sizeof(data));
