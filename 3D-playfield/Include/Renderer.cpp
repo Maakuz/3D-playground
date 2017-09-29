@@ -1,21 +1,15 @@
 #include "Renderer.h"
-
-#define FORWARD_DESC {\
-	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },\
-	{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },\
-	{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },\
-	{ "TRANSFORM", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,  0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },\
-	{ "TRANSFORM", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1 },\
-	{ "TRANSFORM", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1 },\
-	{ "TRANSFORM", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1 }}
+#include "Keyboard.h"
 
 Renderer::Renderer(ID3D11Device * device, ID3D11DeviceContext * context, ID3D11RenderTargetView * backBuffer) :
 	loader(device),
 	forward(device, SHADER_PATH("Forward.hlsl"), FORWARD_DESC, true),
 	depthStencil(device, WIN_WIDTH, WIN_HEIGHT),
-	middleBuffer(device, WIN_WIDTH, WIN_HEIGHT),
-	gaussianPass(device, WIN_WIDTH, WIN_HEIGHT),
-	bloomPicker(device, SHADER_PATH("bloomThreshold.hlsl"))
+	middleBuffer0(device, WIN_WIDTH, WIN_HEIGHT),
+	middleBuffer1(device, WIN_WIDTH, WIN_HEIGHT),
+	fullScreenTriangle(device, SHADER_PATH("FullScreenTriangle.hlsl"), { { "POSITION", 0, DXGI_FORMAT_R8_UINT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 } }),
+	effects(device, &states),
+	states(device)
 {
 	this->device = device;
 	this->context = context;
@@ -25,8 +19,6 @@ Renderer::Renderer(ID3D11Device * device, ID3D11DeviceContext * context, ID3D11R
 	viewport.Height = WIN_HEIGHT;
 	viewport.Width = WIN_WIDTH;
 	viewport.MaxDepth = 1.0;
-
-	states = std::make_unique<DirectX::CommonStates>(device);
 
 }
 
@@ -51,7 +43,7 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 	context->PSSetShader(forward, nullptr, 0);
 	context->GSSetShader(forward, nullptr, 0);
 
-	auto samplerState = states->PointClamp();
+	auto samplerState = states.PointClamp();
 	context->PSSetSamplers(0, 1, &samplerState);
 
 	context->RSSetViewports(1, &viewport);
@@ -67,7 +59,7 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 
 	context->IASetInputLayout(forward);
 
-	ID3D11RenderTargetView * rtv = middleBuffer;
+	ID3D11RenderTargetView * rtv = middleBuffer0;
 
 	context->OMSetRenderTargets(1, &rtv, depthStencil);
 
@@ -96,21 +88,21 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 
 	rtv = nullptr;
 	context->OMSetRenderTargets(1, &rtv, depthStencil);
-
+	context->GSSetShader(nullptr, nullptr, 0);
 
 	//////POSTEFFECTS///////
-	ID3D11ShaderResourceView * srv = middleBuffer;
-	context->CSSetShaderResources(0, 1, &srv);
-	ID3D11UnorderedAccessView * uav = gaussianPass;
-	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
-	context->CSSetShader(bloomPicker, nullptr, 0);
-	context->Dispatch(120, 135, 1);
 
+	//temp
+	auto ks = DirectX::Keyboard::Get().GetState();
 
-	srv = nullptr;
-	context->CSSetShaderResources(0, 1, &srv);
-	uav = nullptr;
-	context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
+	if (!ks.D1)
+	{
+		effects.generateBloomMap(context, middleBuffer0, middleBuffer1);
+		drawToBackBuffer(middleBuffer1);
+	}
+
+	else
+		drawToBackBuffer(middleBuffer0);
 }
 
 
@@ -126,7 +118,7 @@ void Renderer::renderDirectlyToBackBuffer(Camera * camera, FlashLight * flashLig
 	context->PSSetShader(forward, nullptr, 0);
 	context->GSSetShader(forward, nullptr, 0);
 
-	auto samplerState = states->PointClamp();
+	auto samplerState = states.PointClamp();
 	context->PSSetSamplers(0, 1, &samplerState);
 
 	context->RSSetViewports(1, &viewport);
@@ -173,7 +165,7 @@ void Renderer::clear()
 	static float clearColor[] = {0, 0, 0, 0};
 
 	context->ClearRenderTargetView(backBuffer, clearColor);
-	context->ClearRenderTargetView(middleBuffer, clearColor);
+	context->ClearRenderTargetView(middleBuffer0, clearColor);
 	context->ClearDepthStencilView(depthStencil, D3D11_CLEAR_DEPTH, 1.f, 0);
 
 }
@@ -206,4 +198,21 @@ void Renderer::writeInstanceData()
 	
 
 
+}
+
+void Renderer::drawToBackBuffer(ID3D11ShaderResourceView * toBeDrawn)
+{
+	context->IASetInputLayout(fullScreenTriangle);
+	context->VSSetShader(fullScreenTriangle, nullptr, 0);
+	context->PSSetShader(fullScreenTriangle, nullptr, 0);
+
+	context->OMSetRenderTargets(1, &backBuffer, nullptr);
+	auto samplerState = states.PointWrap();
+	context->PSSetSamplers(0, 1, &samplerState);
+	context->PSSetShaderResources(0, 1, &toBeDrawn);
+
+	context->Draw(3, 0);
+
+	ID3D11ShaderResourceView * srvNull = nullptr;
+	context->PSSetShaderResources(0, 1, &srvNull);
 }

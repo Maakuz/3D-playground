@@ -150,17 +150,6 @@ int Window::run()
 		renderer->clear();
 		renderer->render(camera, &flashLight);
 
-		renderer->addItem(obj);
-		renderer->addItem(obj2);
-		renderer->addItem(floor);
-
-		for (size_t i = 0; i < objects.size(); i++)
-		{
-			renderer->addItem(objects[i]);
-		}
-		renderer->clear();
-		renderer->renderDirectlyToBackBuffer(camera, &flashLight);
-
 		//if uncapped everything dies
 		Sleep(1);
 		mSwapChain->Present(0, 0);

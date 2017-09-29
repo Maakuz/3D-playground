@@ -3,7 +3,7 @@
 RenderTargetResource::RenderTargetResource(ID3D11Device * device, UINT width, UINT height)
 {
 	D3D11_TEXTURE2D_DESC textureDesc = {};
-	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	textureDesc.Width = width;
 	textureDesc.Height = height;
@@ -19,6 +19,12 @@ RenderTargetResource::RenderTargetResource(ID3D11Device * device, UINT width, UI
 	renderTargetDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 
 	ThrowIfFailed(device->CreateRenderTargetView(texture, &renderTargetDesc, &renderTargetView));
+	
+	D3D11_UNORDERED_ACCESS_VIEW_DESC unorderedDesc = {};
+	unorderedDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	unorderedDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+
+	ThrowIfFailed(device->CreateUnorderedAccessView(texture, &unorderedDesc, &unorderedView));
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc = {};
 	resourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -40,4 +46,5 @@ RenderTargetResource::~RenderTargetResource()
 {
 	renderTargetView->Release();
 	shaderResourceView->Release();
+	unorderedView->Release();
 }

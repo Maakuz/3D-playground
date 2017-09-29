@@ -1,23 +1,14 @@
 #pragma once
 #include "Resource_Handlers\Shader.h"
-#include "Resource_Handlers\ComputeShader.h"
 #include "Resource_Handlers\Silly_Types\DepthStencil.h"
 #include "Resource_Handlers\ObjLoader.h"
-#include "Resource_Handlers\Silly_Types\RenderTargetResource.h"
-#include "Resource_Handlers\Silly_Types\UnorderedAccessResource.h"
+#include "PostEffects.h"
 #include "FlashLight.h"
 #include <vector>
 #include <unordered_map>
 #include "Camera.h"
 
 #define MODELCOUNT 1
-
-#define WIN_WIDTH 1920
-#define WIN_HEIGHT 1080
-
-#define SHADER_PATH(path) L"Include/Shaders/" path
-
-
 
 struct InstanceData
 {
@@ -31,7 +22,6 @@ struct RenderInfo
 };
 
 
-#include "CommonStates.h"
 class Renderer
 {
 public:
@@ -54,19 +44,22 @@ private:
 	ID3D11Device * device;
 	ID3D11DeviceContext * context;
 	ID3D11RenderTargetView * backBuffer;
-	RenderTargetResource middleBuffer;
-	UnorderedAccessResource gaussianPass;
+	RenderTargetResource middleBuffer0;
+	RenderTargetResource middleBuffer1;
 
 	DepthStencil depthStencil;
 
 	D3D11_VIEWPORT viewport;
-	std::unique_ptr<DirectX::CommonStates> states;
+	DirectX::CommonStates states;
 
+	PostEffects effects;
 	ObjLoader loader;
 	Shader forward;
-	ComputeShader bloomPicker;
+	Shader fullScreenTriangle;
+
 
 	void sortQueue();
 	void writeInstanceData();
+	void drawToBackBuffer(ID3D11ShaderResourceView * toBeDrawn);
 
 };
