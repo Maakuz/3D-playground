@@ -3,9 +3,6 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#define TEXTURE_PATH(path) L"Resources/Textures/" path
-#define OBJECT_PATH(path) "Resources/Objects/" path
-#define MATERIAL_PATH(path) "Resources/Materials/" path
 
 using namespace DirectX::SimpleMath;
 

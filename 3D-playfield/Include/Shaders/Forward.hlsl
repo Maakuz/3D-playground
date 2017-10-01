@@ -12,6 +12,7 @@ struct GS_IN
 {
     float4 pos : POSITION;
     float4 wPos : WORLDPOSITION;
+    float4 viewPos : VIEWPOSITION;
     float3 normal : NORMAL;
     float2 uv : UV;
 
@@ -22,15 +23,24 @@ struct PS_IN
 {
     float4 pos : SV_POSITION;
     float4 wPos : WORLDPOSITION;
+    float4 viewPos : VIEWPOSITION;
     float3 normal : NORMAL;
     float2 uv : UV;
     float3 tangent : TANGENT;
     float3 biTangent : BITANGENT;
 };
 
+struct PS_OUT
+{
+    float4 backBuffer : SV_Target0;
+    float4 pos : SV_Target1;
+    float4 normals : SV_Target2;
+};
+
 cbuffer camera : register(b0)
 {
     float4x4 VP;
+    float4x4 view;
     float4 camPos;
 };
 
@@ -48,6 +58,7 @@ GS_IN VS(VS_IN input)
     output.wPos = float4(input.pos, 1);
 
     output.wPos = mul(input.transform, output.wPos);
+    output.viewPos = mul(view, output.wPos);
     output.pos = mul(VP, output.wPos);
 
     output.normal = normalize(mul(input.transform, float4(input.normal, 0)));
@@ -91,6 +102,7 @@ void GS(triangle GS_IN input[3] : SV_POSITION, inout TriangleStream<PS_IN> outpu
         PS_IN element;
         element.wPos = input[i].wPos;
         element.pos = input[i].pos;
+        element.viewPos = input[i].viewPos;
         element.normal = input[i].normal;
         element.uv = input[i].uv;
         element.tangent = t;
@@ -119,8 +131,10 @@ float3 sampleNormal(PS_IN input)
     return normalize(mul(normalSample, tangentMatrix));
 }
 
-float4 PS(PS_IN input) : SV_Target0
+PS_OUT PS(PS_IN input)
 {
+    PS_OUT output = (PS_OUT)0;
+
     float3 finalNormal = sampleNormal(input);
     
     float3 lightDir = normalize(float3(0, -0.5, 0.5));
@@ -167,6 +181,9 @@ float4 PS(PS_IN input) : SV_Target0
 
     float3 totalIllumination = totalDiffuse + totalSpecularity;
 
-    //return float4(diffuseComponent, 1);
-    return float4(totalIllumination, 1);
+    output.backBuffer  = float4(totalIllumination, 1);
+    output.pos = input.viewPos;
+    output.normals = normalize(mul(view, finalNormal));
+
+    return output;
 }

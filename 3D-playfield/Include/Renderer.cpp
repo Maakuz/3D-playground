@@ -1,12 +1,18 @@
 #include "Renderer.h"
 #include "Keyboard.h"
+#include "WICTextureLoader.h"
 
 Renderer::Renderer(ID3D11Device * device, ID3D11DeviceContext * context, ID3D11RenderTargetView * backBuffer) :
 	loader(device),
 	forward(device, SHADER_PATH("Forward.hlsl"), FORWARD_DESC, true),
+	ssaoShader(device, SHADER_PATH("SSAOShader.hlsl")),
+	ssaoCombinder(device, SHADER_PATH("SSAOCombinder.hlsl")),
 	depthStencil(device, WIN_WIDTH, WIN_HEIGHT),
 	middleBuffer0(device, WIN_WIDTH, WIN_HEIGHT),
 	middleBuffer1(device, WIN_WIDTH, WIN_HEIGHT),
+	posViewSpace(device, WIN_WIDTH, WIN_HEIGHT, DXGI_FORMAT_R32G32B32A32_FLOAT),
+	ssaoOutput(device, WIN_WIDTH, WIN_HEIGHT),
+	normalsViewSpace(device, WIN_WIDTH, WIN_HEIGHT, DXGI_FORMAT_R32G32B32A32_FLOAT),
 	fullScreenTriangle(device, SHADER_PATH("FullScreenTriangle.hlsl"), { { "POSITION", 0, DXGI_FORMAT_R8_UINT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 } }),
 	effects(device, &states),
 	states(device)
@@ -20,11 +26,13 @@ Renderer::Renderer(ID3D11Device * device, ID3D11DeviceContext * context, ID3D11R
 	viewport.Width = WIN_WIDTH;
 	viewport.MaxDepth = 1.0;
 
+	DirectX::CreateWICTextureFromFile(device, TEXTURE_PATH("randomNormalMap.png"), nullptr, &randomNormals);
+
 }
 
 Renderer::~Renderer()
 {
-	
+	SAFE_RELEASE(randomNormals);
 }
 
 void Renderer::addItem(RenderInfo * info)
@@ -59,9 +67,12 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 
 	context->IASetInputLayout(forward);
 
-	ID3D11RenderTargetView * rtv = middleBuffer0;
-
-	context->OMSetRenderTargets(1, &rtv, depthStencil);
+	ID3D11RenderTargetView * rtv[] = {
+		middleBuffer0,
+		posViewSpace,
+		normalsViewSpace
+	};
+	context->OMSetRenderTargets(3, rtv, depthStencil);
 
 	UINT intanceOffset = 0;
 	for (InstanceQueue_t::value_type & pair : instanceQueue)
@@ -86,8 +97,8 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 		context->DrawInstanced(model->vertexCount, (UINT)pair.second.size(), 0, 0);
 	}
 
-	rtv = nullptr;
-	context->OMSetRenderTargets(1, &rtv, depthStencil);
+	ID3D11RenderTargetView * rtvNULLS[3] = { nullptr };
+	context->OMSetRenderTargets(3, rtvNULLS, depthStencil);
 	context->GSSetShader(nullptr, nullptr, 0);
 
 	//////POSTEFFECTS///////
@@ -95,14 +106,40 @@ void Renderer::render(Camera * camera, FlashLight * flashLight)
 	//temp
 	auto ks = DirectX::Keyboard::Get().GetState();
 
-	if (!ks.D1)
+	if (ks.D1)
+	{
+		drawToBackBuffer(middleBuffer0);
+	}
+
+	else if (ks.D2)
+	{
+		drawToBackBuffer(posViewSpace);
+	}
+
+	else if (ks.D3)
+	{
+		drawToBackBuffer(normalsViewSpace);
+	}
+
+	else if (ks.D5)
 	{
 		effects.generateBloomMap(context, middleBuffer0, middleBuffer1);
 		drawToBackBuffer(middleBuffer1);
 	}
-
 	else
-		drawToBackBuffer(middleBuffer0);
+	{
+		
+		ssaoPass();
+
+		if (ks.D4)
+		{
+			drawToBackBuffer(ssaoOutput);
+		}
+
+		else
+			drawToBackBuffer(middleBuffer1);
+
+	}
 }
 
 
@@ -166,6 +203,8 @@ void Renderer::clear()
 
 	context->ClearRenderTargetView(backBuffer, clearColor);
 	context->ClearRenderTargetView(middleBuffer0, clearColor);
+	context->ClearRenderTargetView(normalsViewSpace, clearColor);
+	context->ClearRenderTargetView(posViewSpace, clearColor);
 	context->ClearDepthStencilView(depthStencil, D3D11_CLEAR_DEPTH, 1.f, 0);
 
 }
@@ -215,4 +254,33 @@ void Renderer::drawToBackBuffer(ID3D11ShaderResourceView * toBeDrawn)
 
 	ID3D11ShaderResourceView * srvNull = nullptr;
 	context->PSSetShaderResources(0, 1, &srvNull);
+}
+
+void Renderer::ssaoPass()
+{
+	context->CSSetShader(ssaoShader, nullptr, 0);
+
+	ID3D11ShaderResourceView * srvs[] =
+	{
+		posViewSpace,
+		normalsViewSpace,
+		randomNormals
+	};
+
+	context->CSSetShaderResources(0, 3, srvs);
+	context->CSSetUnorderedAccessViews(0, 1, ssaoOutput, nullptr);
+	context->Dispatch(120, 78, 1);
+
+	auto sampler = states.PointWrap();
+	context->CSSetSamplers(0, 1, &sampler);
+	context->CSSetShader(ssaoCombinder, nullptr, 0);
+	context->CSSetUnorderedAccessViews(0, 1, middleBuffer1, nullptr);
+	context->CSSetShaderResources(0, 1, middleBuffer0);
+	context->CSSetShaderResources(1, 1, ssaoOutput);
+	context->Dispatch(120, 78, 1);
+
+	ID3D11ShaderResourceView * srvsNULL[3] = {nullptr};
+	context->CSSetShaderResources(0, 3, srvsNULL);
+	ID3D11UnorderedAccessView * uavnull = nullptr;
+	context->CSSetUnorderedAccessViews(0, 1, &uavnull, nullptr);
 }

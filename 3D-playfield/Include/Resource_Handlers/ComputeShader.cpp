@@ -1,4 +1,5 @@
 #include "ComputeShader.h"
+#include "../Contants.h"
 #ifdef DEBUG
 #define SHADER_COMPILE_FLAGS D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION
 #else

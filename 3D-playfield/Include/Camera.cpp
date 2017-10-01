@@ -10,6 +10,7 @@ Camera::Camera(ID3D11Device* device, int width, int height, float drawDistance, 
 	this->mProjection = DirectX::XMMatrixPerspectiveFovRH(fieldOfView, float(width) / height, 0.1f, drawDistance);
 
 	values.VP = this->mProjection * this->view;
+	values.V = this->view;
 
 	yaw = 270;
 	pitch = 0;
@@ -94,6 +95,7 @@ void Camera::update(ID3D11DeviceContext* context)
 
 	view = DirectX::XMMatrixLookToRH(pos, forward, Vector3(0, 1, 0));
 
+	values.V = this->view;
 	values.VP = this->view * this->mProjection;
 	values.camPos = Vector4(pos);
 

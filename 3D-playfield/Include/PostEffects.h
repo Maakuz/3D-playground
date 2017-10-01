@@ -3,8 +3,6 @@
 #include "Resource_Handlers\Silly_Types\RenderTargetResource.h"
 #include "Contants.h"
 
-#define SHADER_PATH(path) L"Include/Shaders/" path
-
 class PostEffects
 {
 public:

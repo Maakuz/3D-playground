@@ -32,6 +32,7 @@ private:
 	struct ShaderValues
 	{
 		DirectX::SimpleMath::Matrix VP;
+		DirectX::SimpleMath::Matrix V;
 		DirectX::SimpleMath::Vector4 camPos;
 	};
 

@@ -3,6 +3,7 @@
 #include "SimpleMath.h"
 #include "../ThrowIfFailed.h"
 #include <unordered_map>
+#include "../Contants.h"
 #define MAX_INSTANCES 3000
 
 enum MODEL_ID

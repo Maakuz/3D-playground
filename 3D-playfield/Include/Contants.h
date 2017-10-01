@@ -1,6 +1,7 @@
 #pragma once
 #include <d3d11.h>
 #include "CommonStates.h"
+#define DEBUG
 
 #define FORWARD_DESC {\
 	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },\
@@ -14,3 +15,8 @@
 
 #define WIN_WIDTH 1920
 #define WIN_HEIGHT 1080
+
+#define TEXTURE_PATH(path) L"Resources/Textures/" path
+#define OBJECT_PATH(path) "Resources/Objects/" path
+#define MATERIAL_PATH(path) "Resources/Materials/" path
+#define SHADER_PATH(path) L"Include/Shaders/" path

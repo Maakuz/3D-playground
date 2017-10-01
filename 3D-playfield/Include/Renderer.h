@@ -47,6 +47,13 @@ private:
 	RenderTargetResource middleBuffer0;
 	RenderTargetResource middleBuffer1;
 
+	RenderTargetResource normalsViewSpace;
+	RenderTargetResource posViewSpace;
+	ID3D11ShaderResourceView* randomNormals;
+	RenderTargetResource ssaoOutput;
+	ComputeShader ssaoShader;
+	ComputeShader ssaoCombinder;
+
 	DepthStencil depthStencil;
 
 	D3D11_VIEWPORT viewport;
@@ -61,5 +68,7 @@ private:
 	void sortQueue();
 	void writeInstanceData();
 	void drawToBackBuffer(ID3D11ShaderResourceView * toBeDrawn);
+
+	void ssaoPass();
 
 };
